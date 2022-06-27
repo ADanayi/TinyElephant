@@ -5,7 +5,7 @@
 
 #include "string.h"
 
-namespace tinyelephant
+namespace elephant
 {
     class DiskDriverBase
     {
@@ -49,6 +49,30 @@ namespace tinyelephant
                 return false;
             return _exists(path_str_buf);
         }
+        bool is_dir(const char *path, size_t path_len = 0)
+        {
+            /*
+            if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
+            */
+            if (!ready_path_str_buf(path, path_len))
+                return false;
+            if (!_exists(path_str_buf))
+                return false;
+            return _is_dir(path_str_buf);
+        }
+        bool rmtree(const char *path, size_t path_len = 0)
+        {
+            /*
+            if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
+            */
+            // if (!ready_path_str_buf(path, path_len))
+            //     return false;
+            // if (!_exists(path_str_buf))
+            //     return false;
+            // if (!_is_dir(path_str_buf))
+            //     return false;
+            return _rmtree(path);
+        }
         bool mkdir(const char *path, size_t path_len = 0)
         {
             /*
@@ -76,14 +100,16 @@ namespace tinyelephant
                 return false;
             return _remove(path_str_buf);
         }
-        bool read(const char *path, unsigned char *buf, const size_t max_buf_len, size_t path_len = 0)
+        bool read(const char *path, unsigned char *buf, size_t &len, const size_t max_buf_len, size_t path_len = 0)
         {
             /*
             if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
             */
             if (!ready_path_str_buf(path, path_len))
                 return false;
-            return _read(path, buf, max_buf_len);
+            if (!_exists(path))
+                return false;
+            return _read(path, buf, len, max_buf_len);
         }
         virtual bool write(const char *path, const unsigned char *buf, const size_t buf_len, size_t path_len = 0)
         {
@@ -177,8 +203,10 @@ namespace tinyelephant
         virtual bool _rmdir(const char *path) = 0;
         virtual bool _remove(const char *path) = 0;
         virtual bool _rename(const char *path_from, const char *path_to) = 0;
-        virtual bool _read(const char *path, unsigned char *buf, const size_t max_buf_len);
+        virtual bool _read(const char *path, unsigned char *buf, size_t &len, const size_t max_buf_len);
         virtual bool _write(const char *path, const unsigned char *buf, const size_t buf_len);
+        virtual bool _is_dir(const char *path) = 0;
+        virtual bool _rmtree(const char *path) = 0;
 
     private:
         bool __inited;

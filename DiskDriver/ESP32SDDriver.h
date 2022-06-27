@@ -8,11 +8,12 @@
 #include "SPI.h"
 #include "Arduino.h"
 #include "Esp.h"
+#include "FS.h"
 
 #define ESP32SD_PATH_STR_BUF_SIZE 128
 #define ESP32SD_MOUNT_POINT "/sdcard"
 
-namespace tinyelephant
+namespace elephant
 {
     class ESP32DiskDriver : public DiskDriverBase
     {
@@ -105,12 +106,69 @@ namespace tinyelephant
             return true;
         }
 
-        virtual bool _read(const char *path, unsigned char *buf, const size_t max_buf_len){
-            
+        virtual bool _read(const char *path, unsigned char *buf, size_t &len, const size_t max_buf_len) override
+        {
+            File f = SD_MMC.open(path, FILE_READ);
+            size_t i = 0;
+            len = f.size();
+            if (len < max_buf_len)
+            {
+                f.close();
+                return false;
+            }
+            f.read(buf, len);
+            f.close();
+            return true;
         };
 
-        virtual bool _write(const char *path, const unsigned char *buf, const size_t buf_len){
+        virtual bool _write(const char *path, const unsigned char *buf, const size_t buf_len) override
+        {
+            File f = SD_MMC.open(path, FILE_WRITE);
+            size_t l = f.write(buf, buf_len);
+            f.close();
+            return l == buf_len;
+        };
 
+        virtual bool _is_dir(const char *path) override
+        {
+            File f = SD_MMC.open(path, FILE_READ);
+            bool is_dir = f.isDirectory();
+            f.close();
+            return is_dir;
+        };
+
+        virtual bool _rmtree(const char *path) override
+        {
+            char parent_name[128];
+            strcpy(parent_name, path);
+            // Serial.printf("rmtree %s\n", parent_name);
+            File parent = SD_MMC.open(parent_name, FILE_READ);
+            while (1)
+            {
+                File child = parent.openNextFile(FILE_READ);
+                if (!child)
+                    break;
+                char fname[128];
+                strcpy(fname, child.name());
+                // bool f_is_dir = false;//child.isDirectory();
+                bool f_is_dir = child.isDirectory();
+                child.close();
+                // Serial.printf("\tinner %s, is_dir=%d\n", fname, f_is_dir);
+                if (!f_is_dir)
+                {
+                    if (!this->_remove(fname))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!_rmtree(fname))
+                        return false;
+                }
+            };
+            // Serial.printf("rmdir %s\n", parent_name);
+            return _rmdir(parent_name);
         };
     };
 };

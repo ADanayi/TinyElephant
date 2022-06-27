@@ -4,8 +4,8 @@
 #define __FDB_H
 
 #include "DiskDriver/DiskDriverBase.h"
-//
-namespace tinyelephant
+
+namespace elephant
 {
     struct TinyElephantConfig
     {
