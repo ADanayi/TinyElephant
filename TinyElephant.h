@@ -4,6 +4,8 @@
 #define __FDB_H
 
 #include "DiskDriver/DiskDriverBase.h"
+#include "Classes/_Folder.h"
+#include "setup.h"
 
 namespace elephant
 {

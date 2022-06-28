@@ -109,10 +109,14 @@ namespace elephant
         virtual bool _read(const char *path, unsigned char *buf, size_t &len, const size_t max_buf_len) override
         {
             File f = SD_MMC.open(path, FILE_READ);
+            if (!f) {
+                Serial.printf("ESP32SD Warning: @read: could not open file %s\n", path);
+            }
             size_t i = 0;
             len = f.size();
-            if (len < max_buf_len)
+            if (len > max_buf_len)
             {
+                Serial.printf("ESP32SD Warning: @read: file size: %lu, buf size: %lu, file: %s\n", len, max_buf_len, path);
                 f.close();
                 return false;
             }

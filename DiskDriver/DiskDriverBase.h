@@ -60,18 +60,29 @@ namespace elephant
                 return false;
             return _is_dir(path_str_buf);
         }
+        bool is_file(const char *path, size_t path_len = 0)
+        {
+            /*
+            if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
+            */
+            if (!ready_path_str_buf(path, path_len))
+                return false;
+            if (!_exists(path_str_buf))
+                return false;
+            return !_is_dir(path_str_buf);
+        }
         bool rmtree(const char *path, size_t path_len = 0)
         {
             /*
             if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
             */
-            // if (!ready_path_str_buf(path, path_len))
-            //     return false;
-            // if (!_exists(path_str_buf))
-            //     return false;
-            // if (!_is_dir(path_str_buf))
-            //     return false;
-            return _rmtree(path);
+            if (!ready_path_str_buf(path, path_len))
+                return false;
+            if (!_exists(path_str_buf))
+                return false;
+            if (!_is_dir(path_str_buf))
+                return false;
+            return _rmtree(path_str_buf);
         }
         bool mkdir(const char *path, size_t path_len = 0)
         {
