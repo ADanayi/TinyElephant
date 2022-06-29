@@ -14,12 +14,11 @@ namespace elephant
     {
     public:
         explicit Doc();
-        explicit Doc(const char *path, DiskDriverBase *diskdriver);
+        explicit Doc(const char *path, DiskDriverBase *diskdriver, unsigned char *const data_buf, const size_t data_buf_size);
         bool is_inited() const;
         operator bool() const;
         size_t data_len() const;
         ReadField operator[](const char *name) const;
-        ReadField operator[](const size_t ind) const;
         const unsigned char *data() const;
         unsigned char *_edit_data();
         bool _edit_data_len(size_t set_to);
@@ -31,9 +30,20 @@ namespace elephant
         char _path[TE_PATH_BUF_LEN];
         DiskDriverBase *const _dd;
         bool _is_inited;
-        unsigned char _data[TE_DOC_MAX_SIZE];
+        unsigned char *const _data;
+        const size_t _data_size;
         size_t _data_len;
     };
+
+    // class DefaultDoc : public Doc
+    // {
+    // public:
+    //     explicit DefaultDoc() : Doc(){};
+    //     explicit DefaultDoc(const char *path, DiskDriverBase *diskdriver) : Doc(path, diskdriver, this->_ibuf, TE_DEFAULT_WRITER_BUF_SIZE){};
+
+    // private:
+    //     unsigned char _ibuf[TE_DEFAULT_WRITER_BUF_SIZE];
+    // };
 }
 
 namespace elephant
@@ -49,7 +59,7 @@ namespace elephant
         return f;
     }
 
-    Doc::Doc() : _dd(nullptr)
+    Doc::Doc() : _dd(nullptr), _data(nullptr), _data_size(0)
     {
         _is_inited = false;
         _data_len = 0;
@@ -57,7 +67,11 @@ namespace elephant
 
     Doc::Doc(
         const char *path,
-        DiskDriverBase *diskdrive) : _dd(diskdrive)
+        DiskDriverBase *diskdrive,
+        unsigned char *const data_buf,
+        const size_t data_buf_size) : _dd(diskdrive),
+                                      _data(data_buf),
+                                      _data_size(data_buf_size)
     {
         _is_inited = false;
         _data_len = 0;
@@ -70,7 +84,8 @@ namespace elephant
 
         strcpy(_path, path);
 
-        if (!_dd->read(_path, _data, _data_len, TE_DOC_MAX_SIZE)) {
+        if (!_dd->read(_path, _data, _data_len, _data_size))
+        {
             // Serial.println(_path);
             // Serial.println("Error 3");
             return;
@@ -96,12 +111,12 @@ namespace elephant
 
     bool Doc::_edit_data_len(size_t set_to)
     {
-        if (set_to <= TE_DOC_MAX_SIZE)
+        if (set_to <= _data_size)
         {
             _data_len = set_to;
             return true;
         }
-        _data_len = TE_DOC_MAX_SIZE;
+        _data_len = _data_size;
         return false;
     }
 
@@ -115,23 +130,10 @@ namespace elephant
         return _dd->write(_path, dw.data(), dw.data_len());
     }
 
-    // ReadField Doc::operator[](const char *name) const
-    // {
-    //     size_t d_ctr = 0;
-    //     while (d_ctr < _data_len)
-    //     {
-    //         ReadField R(_data + d_ctr, TE_DOC_MAX_SIZE - d_ctr);
-    //         if (!R)
-    //             return R;
-    //         if (R == name)
-    //             return R;
-    //         d_ctr += R.pure_field_len();
-    //     }
-    //     return ReadField();
-    // }
-
     ReadField Doc::operator[](const char *name) const
     {
+        if (!_is_inited)
+            return ReadField();
         size_t d_ctr = 0;
         while (1)
         {
@@ -143,23 +145,6 @@ namespace elephant
             d_ctr += R.pure_field_len();
         }
     }
-
-    // ReadField Doc::operator[](const size_t ind) const
-    // {
-    //     size_t d_ctr = 0;
-    //     size_t ind_ctr = 0;
-    //     while (d_ctr < _data_len)
-    //     {
-    //         ReadField R(_data + d_ctr, TE_DOC_MAX_SIZE - d_ctr);
-    //         if (!R)
-    //             return R;
-    //         if (ind_ctr == ind)
-    //             return R;
-    //         ind_ctr++;
-    //         d_ctr += R.pure_field_len();
-    //     }
-    //     return ReadField();
-    // }
 
     bool Doc::is_inited() const
     {

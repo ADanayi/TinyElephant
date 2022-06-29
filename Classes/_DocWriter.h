@@ -12,7 +12,7 @@ namespace elephant
     class DocWriter
     {
     public:
-        explicit DocWriter();
+        explicit DocWriter(unsigned char *const buffer, const size_t buffer_size);
         explicit DocWriter(DocWriter &) = delete;
         bool append_field(const char *name, size_t data_len, const unsigned char *data);
         bool append_field(const char *name, const char *str_data);
@@ -20,16 +20,26 @@ namespace elephant
         const unsigned char *data() const;
         size_t data_len() const;
         bool save_to_file(DiskDriverBase *dd, const char *path) const;
+        void clean();
 
     private:
-        unsigned char _buf[TE_DOC_MAX_SIZE];
+        unsigned char *const _buf;
+        const size_t _bufSize;
         size_t _len;
     };
+
+    static unsigned char __writer_singleton_buf[TE_DEFAULT_WRITER_BUF_SIZE];
+    DocWriter writer(__writer_singleton_buf, TE_DEFAULT_WRITER_BUF_SIZE);
 };
 
 namespace elephant
 {
-    DocWriter::DocWriter()
+    DocWriter::DocWriter(unsigned char *const buffer, const size_t buffer_size) : _buf(buffer), _bufSize(buffer_size)
+    {
+        _len = 0;
+    }
+
+    void DocWriter::clean()
     {
         _len = 0;
     }
@@ -57,7 +67,7 @@ namespace elephant
     bool DocWriter::append_field(const ReadField &rf)
     {
         size_t rf_len = rf.pure_field_len();
-        if (rf_len + _len > TE_DOC_MAX_SIZE)
+        if (rf_len + _len > _bufSize)
             return false;
         for (size_t i = 0; i < rf_len; i++)
         {
@@ -74,7 +84,7 @@ namespace elephant
         size_t name_len = strlen(name);
         size_t len_str_len = strlen(len_str);
         size_t field_len = name_len + len_str_len + data_len + 2;
-        if (field_len + _len > TE_DOC_MAX_SIZE)
+        if (field_len + _len > _bufSize)
             return false;
 
         for (size_t i = 0; i < name_len; i++)

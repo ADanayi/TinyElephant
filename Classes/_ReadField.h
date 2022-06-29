@@ -10,7 +10,7 @@ namespace elephant
     class ReadField
     {
     public:
-        ReadField(const unsigned char *const plain_data, size_t maxLen = TE_DOC_MAX_SIZE);
+        ReadField(const unsigned char *const plain_data, size_t maxLen);
         explicit ReadField();
         const char *name() const;
         const size_t data_len() const;
@@ -18,7 +18,7 @@ namespace elephant
         const unsigned char *data() const;
         operator bool() const;
         bool operator==(const char *name) const;
-        const char *str(bool& conversion_ok) const;
+        const char *str(bool &conversion_ok) const;
 
     private:
         const unsigned char *const _pdata;
@@ -33,7 +33,8 @@ namespace elephant
     const char *ReadField::str(bool &conversion_ok) const
     {
         conversion_ok = true;
-        if (_data[_len - 1] != '\0') conversion_ok = false;
+        if (_data[_len - 1] != '\0')
+            conversion_ok = false;
         return (const char *)_data;
     }
 
@@ -49,15 +50,7 @@ namespace elephant
         _data = nullptr;
 
         // Let's skip the name part!
-        while (_pure_len <= maxLen)
-        {
-            if (plain_data[_pure_len] == '\0')
-            {
-                _pure_len++;
-                break;
-            }
-            _pure_len++;
-        }
+        _pure_len += strlen((const char *const)_pdata) + 1;
         if (_pure_len >= maxLen - 2)
         {
             _pure_len = maxLen;
@@ -66,27 +59,19 @@ namespace elephant
         }
 
         // Let's read the len
-        _len = atol((const char *)plain_data + _pure_len);
+        _len = atol((const char *)_pdata + _pure_len);
 
         // Now, let's skip the len part!
-        while (_pure_len <= maxLen)
-        {
-            if (plain_data[_pure_len] == '\0')
-            {
-                _pure_len++;
-                break;
-            }
-            _pure_len++;
-        }
+        _pure_len += strlen((const char *const)_pdata + _pure_len) + 1;
         if (_pure_len >= maxLen - _len)
         {
-            _len = 0;
             _pure_len = maxLen;
+            _len = 0;
             return;
         }
 
         // Let's set the data pointer
-        _data = plain_data + _pure_len;
+        _data = _pdata + _pure_len;
 
         // Let's set the pure len
         _pure_len += _len;
@@ -96,7 +81,7 @@ namespace elephant
     {
         if (_data == nullptr)
             return "";
-        return (const char *)_data;
+        return (const char *)_pdata;
     }
 
     const size_t ReadField::pure_field_len() const
