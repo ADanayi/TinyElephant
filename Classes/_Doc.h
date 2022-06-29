@@ -18,7 +18,7 @@ namespace elephant
         bool is_inited() const;
         operator bool() const;
         size_t data_len() const;
-        ReadField operator[](const char *name) const;
+        // ReadField operator[](const char *name) const;
         const unsigned char *data() const;
         unsigned char *_edit_data();
         bool _edit_data_len(size_t set_to);
@@ -71,7 +71,6 @@ namespace elephant
         explicit DefaultDoc(const char *path, DiskDriverBase *diskdriver) : Doc(path, diskdriver, allocate_memory(), TE_DEFAULT_WRITER_BUF_SIZE){};
         DefaultDoc(const DefaultDoc &d) : Doc()
         {
-            Serial.println("Copy Cons");
             this->_data = copy_memory(&d);
             this->_data_len = d._data_len;
             this->_data_size = d._data_size;
@@ -81,7 +80,6 @@ namespace elephant
         }
         ~DefaultDoc()
         {
-            Serial.println("Destructor");
             if (_data != nullptr)
             {
                 delete _data;
@@ -122,7 +120,6 @@ namespace elephant
 
         if (_dd == nullptr)
         {
-            // Serial.println("Error 1");
             return;
         }
 
@@ -130,8 +127,6 @@ namespace elephant
 
         if (!_dd->read(_path, _data, _data_len, _data_size))
         {
-            // Serial.println(_path);
-            // Serial.println("Error 3");
             return;
         }
 
@@ -174,21 +169,20 @@ namespace elephant
         return _dd->write(_path, dw.data(), dw.data_len());
     }
 
-    ReadField Doc::operator[](const char *name) const
-    {
-        if (!_is_inited)
-            return ReadField();
-        size_t d_ctr = 0;
-        while (1)
-        {
-            ReadField R = next(d_ctr);
-            if (!R)
-                return R;
-            if (R == name)
-                return R;
-            d_ctr += R.pure_field_len();
-        }
-    }
+    // ReadField Doc::operator[](const char *name) const
+    // {
+    //     if (!_is_inited)
+    //         return ReadField();
+    //     size_t d_ctr = 0;
+    //     while (1)
+    //     {
+    //         ReadField R = next(d_ctr);
+    //         if (!R)
+    //             return R;
+    //         if (R == name)
+    //             return R;
+    //     }
+    // }
 
     bool Doc::is_inited() const
     {

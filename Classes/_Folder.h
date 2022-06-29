@@ -67,7 +67,7 @@ namespace elephant
         _child_count -= 1;
         bool ok = true;
         ok = ok && save_config_file("first", _child_first, true);
-        ok = ok && save_config_file("count", _child_first, true);
+        ok = ok && save_config_file("count", _child_count, true);
         return ok;
     }
 
@@ -99,7 +99,10 @@ namespace elephant
             if (_child_count > 0 && count < _child_count)
                 return true;
             if (count != _child_count)
+            {
+                _child_count = count;
                 save_config_file("count", count, true);
+            }
 
             if (!is_endpoint)
                 return get_child_folder(chid).commit_configs_for_inc(id, id_str_len);

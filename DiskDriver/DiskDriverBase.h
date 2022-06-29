@@ -175,19 +175,15 @@ namespace elephant
                 if (ch == '/')
                 {
                     path_str_buf[ctr + path_prefix_len] = '\0';
-                    // Serial.print(path_str_buf);
                     if (!_exists(path_str_buf))
                     {
-                        // Serial.println(" not existing!");
                         if (!_mkdir(path_str_buf))
                         {
                             return false;
                         }
-                        // Serial.println("\tCreated.");
                     }
                     else
                     {
-                        // Serial.println(" exists.");
                     }
                 }
 

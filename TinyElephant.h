@@ -24,10 +24,10 @@ namespace elephant
         bool remove_last_docs();
         // TinyOperationResult replace(tenum id, DocWriter &replace_with);
 
-    protected:
+        // protected:
         void _path_of_to_buf(const tenum id);
 
-    private:
+        // private:
         bool _inited;
         DiskDriverBase *const dd;
         const char *const root_path;
@@ -84,10 +84,20 @@ namespace elephant
     bool TinyElephant::remove_last_docs()
     {
         if (root.is_empty())
+        {
             return false;
-        char buf[TE_PATH_BUF_LEN];
-        _path_of_to_buf(root.calc_first_doc_sub_id());
-        bool ok = dd->rmtree(path_buf);
+        }
+        bool ok;
+        if (root.is_endpoint)
+        {
+            sprintf(path_buf, "%s/%d.ted", root_path, root.child_first());
+            ok = dd->remove(path_buf);
+        }
+        else
+        {
+            sprintf(path_buf, "%s/%d", root_path, root.child_first());
+            ok = dd->rmtree(path_buf);
+        }
         return ok && root._increase_first();
     }
 

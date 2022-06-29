@@ -113,8 +113,9 @@ namespace elephant
                 return false;
             if (name[ctr] == '\0')
                 return true;
+            ctr++;
         }
-        return true;
+        return false;
     }
 }
 
