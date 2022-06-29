@@ -20,7 +20,8 @@ namespace elephant
         operator bool();
         TinyOperationResult insert(DocWriter &document);
         Doc fetch(tenum id, unsigned char *const buf, const size_t buf_size);
-        Doc fetch_default_buf(tenum id);
+        DefaultDoc fetch(tenum id);
+        bool remove_last_docs();
         // TinyOperationResult replace(tenum id, DocWriter &replace_with);
 
     protected:
@@ -80,6 +81,16 @@ namespace elephant
         _is_inited = true;
     }
 
+    bool TinyElephant::remove_last_docs()
+    {
+        if (root.is_empty())
+            return false;
+        char buf[TE_PATH_BUF_LEN];
+        _path_of_to_buf(root.calc_first_doc_sub_id());
+        dd->rmtree(path_buf);
+        return root._increase_first();
+    }
+
     bool TinyElephant::is_inited()
     {
         return _is_inited;
@@ -118,13 +129,13 @@ namespace elephant
         return tor;
     }
 
-    // Doc TinyElephant::fetch_default_buf(tenum id)
-    // {
-    //     if (id < cursor_first || id >= cursor_next)
-    //         return Doc();
-    //     _path_of_to_buf(id);
-    //     return DefaultDoc(path_buf, dd);
-    // }
+    DefaultDoc TinyElephant::fetch(tenum id)
+    {
+        if (id < cursor_first || id >= cursor_next)
+            return DefaultDoc();
+        _path_of_to_buf(id);
+        return DefaultDoc(path_buf, dd);
+    }
 
     Doc TinyElephant::fetch(tenum id, unsigned char *const buf, const size_t buf_size)
     {

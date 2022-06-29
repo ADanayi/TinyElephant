@@ -32,8 +32,8 @@ namespace elephant
         bool is_full() const;
         bool is_empty() const;
         tenum docs_count() const;
+        bool _increase_first();
 
-        // protected:
         void child_path(char *child_path_buf, size_t child_number) const;
         size_t load_config_file(const char *config, const bool resave_and_synch = true, const size_t default_value = 0); // Creates the len file if not existing and sets it to 0 (also tries to load the backup (.dbb) too.)
         bool save_config_file(const char *config, const size_t val, bool save_backup = true);
@@ -57,6 +57,16 @@ namespace elephant
 
 namespace elephant
 {
+    bool Folder::_increase_first()
+    {
+        if (!is_root)
+            return false;
+        if (is_empty())
+            return false;
+        _child_first += 1;
+        save_config_file("first", _child_first, true);
+    }
+
     bool Folder::commit_configs_for_inc(tenum id)
     {
         char buf[TE_PATH_BUF_LEN];

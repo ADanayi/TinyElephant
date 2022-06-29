@@ -26,24 +26,68 @@ namespace elephant
         bool replace(DocWriter &new_doc);
         ReadField next(size_t &data_offset) const;
 
-    private:
-        char _path[TE_PATH_BUF_LEN];
-        DiskDriverBase *const _dd;
+    protected:
+        unsigned char *_data;
+        size_t _data_size;
         bool _is_inited;
-        unsigned char *const _data;
-        const size_t _data_size;
+        char _path[TE_PATH_BUF_LEN];
+        DiskDriverBase *_dd;
         size_t _data_len;
     };
 
-    // class DefaultDoc : public Doc
-    // {
-    // public:
-    //     explicit DefaultDoc() : Doc(){};
-    //     explicit DefaultDoc(const char *path, DiskDriverBase *diskdriver) : Doc(path, diskdriver, this->_ibuf, TE_DEFAULT_WRITER_BUF_SIZE){};
+    class DefaultDoc : public Doc
+    {
+    private:
+        static unsigned char *allocate_memory()
+        {
+            return new unsigned char[TE_DEFAULT_WRITER_BUF_SIZE];
+        }
+        static unsigned char *steal_memory(DefaultDoc *d)
+        {
+            if (d->_is_inited)
+            {
+                unsigned char *ret = d->_data;
+                d->_data = nullptr;
+                return ret;
+            }
+            else
+                return nullptr;
+        }
+        static unsigned char *copy_memory(const DefaultDoc *d)
+        {
+            if (d->_is_inited)
+            {
+                unsigned char ret[TE_DEFAULT_WRITER_BUF_SIZE];
+                for (size_t i = 0; i < TE_DEFAULT_WRITER_BUF_SIZE; i++)
+                    ret[i] = d->_data[i];
+                return ret;
+            }
+            else
+                return nullptr;
+        }
 
-    // private:
-    //     unsigned char _ibuf[TE_DEFAULT_WRITER_BUF_SIZE];
-    // };
+    public:
+        explicit DefaultDoc() : Doc(){};
+        explicit DefaultDoc(const char *path, DiskDriverBase *diskdriver) : Doc(path, diskdriver, allocate_memory(), TE_DEFAULT_WRITER_BUF_SIZE){};
+        DefaultDoc(const DefaultDoc &d) : Doc()
+        {
+            Serial.println("Copy Cons");
+            this->_data = copy_memory(&d);
+            this->_data_len = d._data_len;
+            this->_data_size = d._data_size;
+            this->_is_inited = d._is_inited;
+            strcpy(this->_path, d._path);
+            this->_dd = d._dd;
+        }
+        ~DefaultDoc()
+        {
+            Serial.println("Destructor");
+            if (_data != nullptr)
+            {
+                delete _data;
+            }
+        }
+    };
 }
 
 namespace elephant
