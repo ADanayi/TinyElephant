@@ -64,7 +64,11 @@ namespace elephant
         if (is_empty())
             return false;
         _child_first += 1;
-        save_config_file("first", _child_first, true);
+        _child_count -= 1;
+        bool ok = true;
+        ok = ok && save_config_file("first", _child_first, true);
+        ok = ok && save_config_file("count", _child_first, true);
+        return ok;
     }
 
     bool Folder::commit_configs_for_inc(tenum id)

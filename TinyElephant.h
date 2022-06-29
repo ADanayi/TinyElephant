@@ -87,8 +87,8 @@ namespace elephant
             return false;
         char buf[TE_PATH_BUF_LEN];
         _path_of_to_buf(root.calc_first_doc_sub_id());
-        dd->rmtree(path_buf);
-        return root._increase_first();
+        bool ok = dd->rmtree(path_buf);
+        return ok && root._increase_first();
     }
 
     bool TinyElephant::is_inited()
