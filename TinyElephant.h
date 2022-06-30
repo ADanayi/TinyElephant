@@ -62,6 +62,10 @@ namespace elephant
         if (root.is_empty())
         {
             cursor_next = 0;
+#ifndef TE_USE_DEFAULT_WRITER_SINGLETON
+            unsigned char buf[TE_DEFAULT_WRITER_BUF_SIZE];
+            DocWriter writer(buf, TE_DEFAULT_WRITER_BUF_SIZE);
+#endif
             writer.clean();
             writer.append_field("Tiny", "Elephant");
             writer.append_field("Version", TE_VERSION);

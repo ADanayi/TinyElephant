@@ -18,7 +18,7 @@ namespace elephant
         bool is_inited() const;
         operator bool() const;
         size_t data_len() const;
-        // ReadField operator[](const char *name) const;
+        ReadField operator[](const char *name) const;
         const unsigned char *data() const;
         unsigned char *_edit_data();
         bool _edit_data_len(size_t set_to);
@@ -169,20 +169,20 @@ namespace elephant
         return _dd->write(_path, dw.data(), dw.data_len());
     }
 
-    // ReadField Doc::operator[](const char *name) const
-    // {
-    //     if (!_is_inited)
-    //         return ReadField();
-    //     size_t d_ctr = 0;
-    //     while (1)
-    //     {
-    //         ReadField R = next(d_ctr);
-    //         if (!R)
-    //             return R;
-    //         if (R == name)
-    //             return R;
-    //     }
-    // }
+    ReadField Doc::operator[](const char *name) const
+    {
+        if (!_is_inited)
+            return ReadField();
+        size_t d_ctr = 0;
+        while (1)
+        {
+            ReadField R = next(d_ctr);
+            if (!R)
+                return R;
+            if (R == name)
+                return R;
+        }
+    }
 
     bool Doc::is_inited() const
     {

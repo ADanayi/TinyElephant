@@ -29,7 +29,9 @@ namespace elephant
     };
 
     static unsigned char __writer_singleton_buf[TE_DEFAULT_WRITER_BUF_SIZE];
+#ifdef TE_USE_DEFAULT_WRITER_SINGLETON
     DocWriter writer(__writer_singleton_buf, TE_DEFAULT_WRITER_BUF_SIZE);
+#endif
 };
 
 namespace elephant

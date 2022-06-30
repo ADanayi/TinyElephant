@@ -104,8 +104,10 @@ namespace elephant
     }
     bool ReadField::operator==(const char *name) const
     {
-        if (_data == nullptr)
+        if (_data == nullptr) {
+            // Serial.println("here!!!");
             return false;
+        }
         size_t ctr = 0;
         while (1)
         {
