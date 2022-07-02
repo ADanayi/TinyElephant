@@ -13,27 +13,32 @@
 #define ESP32SD_PATH_STR_BUF_SIZE 128
 #define ESP32SD_MOUNT_POINT "/sdcard"
 
+unsigned long long int arduino_millis()
+{
+    return millis();
+}
+
 namespace elephant
 {
     class ESP32DiskDriver : public DiskDriverBase
     {
+        static char buf[ESP32SD_PATH_STR_BUF_SIZE];
+
     public:
-        explicit ESP32DiskDriver() : DiskDriverBase(this->path_str_buf, (size_t)ESP32SD_PATH_STR_BUF_SIZE, ""){};
+        explicit ESP32DiskDriver() : DiskDriverBase(ESP32DiskDriver::buf, (size_t)ESP32SD_PATH_STR_BUF_SIZE, ""){};
         explicit ESP32DiskDriver(ESP32DiskDriver &) = delete;
 
-    private:
-        char path_str_buf[ESP32SD_PATH_STR_BUF_SIZE];
-
-    protected:
+        // protected:
+    public:
         virtual bool _init() override
         {
-            Serial.println("ESP32SD: initializing...");
-            Serial.flush();
+            // Serial.println("ESP32SD: initializing...");
+            // Serial.flush();
             delay(10);
             // Initialize the SD card
             if (!SD_MMC.begin(ESP32SD_MOUNT_POINT, true))
             {
-                Serial.println("Failed to mount SD card");
+                // Serial.println("Failed to mount SD card");
                 return false;
             }
 
@@ -41,12 +46,12 @@ namespace elephant
             uint8_t cardType = SD_MMC.cardType();
             if (cardType == sdcard_type_t::CARD_NONE)
             {
-                Serial.println("No SD card attached");
+                // Serial.println("No SD card attached");
                 return false;
             }
             else
             {
-                Serial.printf("SD Card type: %d\n", (int)cardType);
+                // Serial.printf("SD Card type: %d\n", (int)cardType);
             }
             return true;
         };
@@ -70,7 +75,7 @@ namespace elephant
         {
             if (!SD_MMC.mkdir(path))
             {
-                Serial.printf("ESP32SD Warning: Could not mkdir %s\n", path);
+                // Serial.printf("ESP32SD Warning: Could not mkdir %s\n", path);
                 return false;
             }
             return true;
@@ -80,7 +85,7 @@ namespace elephant
         {
             if (!SD_MMC.rmdir(path))
             {
-                Serial.printf("ESP32SD Warning: Could not rmdir %s\n", path);
+                // Serial.printf("ESP32SD Warning: Could not rmdir %s\n", path);
                 return false;
             }
             return true;
@@ -90,7 +95,7 @@ namespace elephant
         {
             if (!SD_MMC.remove(path))
             {
-                Serial.printf("ESP32SD Warning: Could not remove %s\n", path);
+                // Serial.printf("ESP32SD Warning: Could not remove %s\n", path);
                 return false;
             }
             return true;
@@ -100,7 +105,7 @@ namespace elephant
         {
             if (!SD_MMC.rename(old_path, new_path))
             {
-                Serial.printf("ESP32SD Warning: Could not rename %s to %s\n", new_path, old_path);
+                // Serial.printf("ESP32SD Warning: Could not rename %s to %s\n", old_path, new_path);
                 return false;
             }
             return true;
@@ -109,14 +114,15 @@ namespace elephant
         virtual bool _read(const char *path, unsigned char *buf, size_t &len, const size_t max_buf_len) override
         {
             File f = SD_MMC.open(path, FILE_READ);
-            if (!f) {
-                Serial.printf("ESP32SD Warning: @read: could not open file %s\n", path);
+            if (!f)
+            {
+                // Serial.printf("ESP32SD Warning: @read: could not open file %s\n", path);
             }
             size_t i = 0;
             len = f.size();
             if (len > max_buf_len)
             {
-                Serial.printf("ESP32SD Warning: @read: file size: %lu, buf size: %lu, file: %s\n", len, max_buf_len, path);
+                // Serial.printf("ESP32SD Warning: @read: file size: %lu, buf size: %lu, file: %s\n", len, max_buf_len, path);
                 f.close();
                 return false;
             }
@@ -145,7 +151,7 @@ namespace elephant
         {
             char parent_name[128];
             strcpy(parent_name, path);
-            // Serial.printf("rmtree %s\n", parent_name);
+            // // Serial.printf("rmtree %s\n", parent_name);
             File parent = SD_MMC.open(parent_name, FILE_READ);
             while (1)
             {
@@ -157,7 +163,7 @@ namespace elephant
                 // bool f_is_dir = false;//child.isDirectory();
                 bool f_is_dir = child.isDirectory();
                 child.close();
-                // Serial.printf("\tinner %s, is_dir=%d\n", fname, f_is_dir);
+                // // Serial.printf("\tinner %s, is_dir=%d\n", fname, f_is_dir);
                 if (!f_is_dir)
                 {
                     if (!this->_remove(fname))
@@ -171,9 +177,16 @@ namespace elephant
                         return false;
                 }
             };
-            // Serial.printf("rmdir %s\n", parent_name);
+            // // Serial.printf("rmdir %s\n", parent_name);
             return _rmdir(parent_name);
         };
+
+        virtual unsigned long long int _millis() override
+        {
+            return arduino_millis();
+        }
     };
+
+    char ESP32DiskDriver::buf[ESP32SD_PATH_STR_BUF_SIZE];
 };
 #endif

@@ -17,6 +17,9 @@ namespace elephant
         {
             return status;
         };
+        unsigned long long int time_loading_ms;
+        unsigned long long int time_commit_ms;
+        unsigned long long int time_doc_io_ms;
     };
 
 };

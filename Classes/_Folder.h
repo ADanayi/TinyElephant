@@ -36,9 +36,9 @@ namespace elephant
 
         void child_path(char *child_path_buf, size_t child_number) const;
         size_t load_config_file(const char *config, const bool resave_and_synch = true, const size_t default_value = 0); // Creates the len file if not existing and sets it to 0 (also tries to load the backup (.dbb) too.)
-        bool save_config_file(const char *config, const size_t val, bool save_backup = true);
+        bool save_config_file(const char *config, const size_t val);
         bool save_backup_config_file(const char *config, const size_t val);
-        size_t scan_for_len(); // Not recommended and I try not to use it at all!
+        // size_t scan_for_len(); // Not recommended and I try not to use it at all!
         size_t get_child_number_for_id(tenum id) const;
         size_t get_child_number_for_id(const char *id, size_t id_str_len = 0) const;
         tenum calc_last_doc_sub_id() const; // Warning: It returns invalid data if the folder is empty
@@ -66,8 +66,8 @@ namespace elephant
         _child_first += 1;
         _child_count -= 1;
         bool ok = true;
-        ok = ok && save_config_file("first", _child_first, true);
-        ok = ok && save_config_file("count", _child_count, true);
+        ok = ok && save_config_file("first", _child_first);
+        ok = ok && save_config_file("count", _child_count);
         return ok;
     }
 
@@ -101,7 +101,7 @@ namespace elephant
             if (count != _child_count)
             {
                 _child_count = count;
-                save_config_file("count", count, true);
+                save_config_file("count", count);
             }
 
             if (!is_endpoint)
@@ -268,7 +268,10 @@ namespace elephant
             return;
 
         // Ensuring the folder exists!
+        ticT t = os.ctic();
+        // Serial.printf("ensure_folder_exists@ %s\n", path);
         _dd->ensure_folder_exists(path);
+        // Serial.printf("\t%lu\n", os.ctic() - t);
 
         strcpy(_path, path);
 
@@ -317,17 +320,23 @@ namespace elephant
         return _dd->write(confile_path, (unsigned char *)valstr, strlen(valstr) + 1);
     }
 
-    bool Folder::save_config_file(const char *config, const size_t val, bool save_backup)
+    bool Folder::save_config_file(const char *config, const size_t val)
     {
         char confile_path[TE_PATH_BUF_LEN];
+        char bconfile_path[TE_PATH_BUF_LEN];
         char valstr[64];
         sprintf(confile_path, "%s/%s.tec", _path, config);
+        strcpy(bconfile_path, confile_path);
+        bconfile_path[strlen(confile_path) - 1] = 'b';
+        if (_dd->exists(confile_path))
+        {
+            _dd->remove(bconfile_path);
+            _dd->rename(confile_path, bconfile_path);
+        }
         sprintf(valstr, "%u", val);
-        if (!_dd->write(confile_path, (unsigned char *)valstr, strlen(valstr) + 1))
-            return false;
-        if (save_backup)
-            return this->save_backup_config_file(config, val);
-        return true;
+        return _dd->write(confile_path, (unsigned char *)valstr, strlen(valstr) + 1);
+        // if (save_backup)
+        //     return this->save_backup_config_file(config, val);
     }
 
     size_t Folder::load_config_file(const char *config, const bool resave_and_synch, const size_t default_value)
@@ -337,39 +346,55 @@ namespace elephant
         char valstr[64];
         size_t valstr_len;
 
-        sprintf(confile_path, "%s/%s.tec", _path, config);
-        bool original_exists = _dd->is_file(confile_path);
-        if (!original_exists)
-            sprintf(confile_path, "%s/%s.teb", _path, config);
+        bool tec_exists;
+        bool teb_exists;
+        size_t tec_val;
+        size_t teb_val;
 
-        if (_dd->is_file(confile_path))
+        sprintf(confile_path, "%s/%s.tec", _path, config);
+        tec_exists = _dd->exists(confile_path);
+        if (tec_exists)
         {
             _dd->read(confile_path, (unsigned char *)valstr, valstr_len, 64);
             valstr[valstr_len] = '\0';
             val = atoi(valstr);
+            return val;
         }
 
-        if (resave_and_synch || !original_exists)
+        confile_path[strlen(confile_path) - 1] = 'b';
+        teb_exists = _dd->exists(confile_path);
+
+        if (!teb_exists)
         {
-            save_config_file(config, val, true);
+            save_config_file(config, default_value);
         }
+        else
+        {
+            char buf[TE_PATH_BUF_LEN];
+            strcpy(buf, confile_path);
+            size_t l = strlen(confile_path);
+            confile_path[l - 1] = 'b';
+            buf[l - 1] = 'c';
+            _dd->rename(confile_path, buf, l, l);
+        }
+
         return val;
     }
 
-    size_t Folder::scan_for_len()
-    {
-        if (is_root)
-            return load_config_file("len", true, 0);
-        else
-        {
-            size_t len = 0;
-            for (len = 0; len < 10; len++)
-            {
-                if (!child_exists(len))
-                    return len;
-            }
-        }
-    }
+    // size_t Folder::scan_for_len()
+    // {
+    //     if (is_root)
+    //         return load_config_file("len", true, 0);
+    //     else
+    //     {
+    //         size_t len = 0;
+    //         for (len = 0; len < 10; len++)
+    //         {
+    //             if (!child_exists(len))
+    //                 return len;
+    //         }
+    //     }
+    // }
 
     void Folder::child_path(char *child_path_buf, size_t child_number) const
     {
@@ -388,11 +413,11 @@ namespace elephant
         child_path(pbuf, child_number);
         if (is_endpoint)
         {
-            return _dd->is_file(pbuf);
+            return _dd->exists(pbuf);
         }
         else
         {
-            return _dd->is_dir(pbuf);
+            return _dd->exists(pbuf);
         }
     }
 

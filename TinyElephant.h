@@ -19,6 +19,9 @@ namespace elephant
         bool is_inited();
         operator bool();
         TinyOperationResult insert(DocWriter &document);
+#ifdef TE_USE_DEFAULT_WRITER_SINGLETON
+        TinyOperationResult insert();
+#endif
         Doc fetch(tenum id, unsigned char *const buf, const size_t buf_size);
         DefaultDoc fetch(tenum id);
         bool remove_last_docs();
@@ -85,6 +88,13 @@ namespace elephant
         _is_inited = true;
     }
 
+#ifdef TE_USE_DEFAULT_WRITER_SINGLETON
+    TinyOperationResult TinyElephant::insert()
+    {
+        return insert(writer);
+    }
+#endif
+
     bool TinyElephant::remove_last_docs()
     {
         if (root.is_empty())
@@ -125,15 +135,23 @@ namespace elephant
         {
             return tor;
         }
+
+        //@optimization
+        unsigned long long int t = dd->millis();
         _path_of_to_buf(cursor_next);
+        tor.time_loading_ms = dd->millis() - t;
+        t = dd->millis();
         if (!root.commit_configs_for_inc(cursor_next))
         {
             return tor;
         }
+        tor.time_commit_ms = dd->millis() - t;
+        t = dd->millis();
         if (!document.save_to_file(dd, path_buf))
         {
             return tor;
         }
+        tor.time_doc_io_ms = dd->millis() - t;
 
         tor.status = true;
         tor.id = cursor_next;
