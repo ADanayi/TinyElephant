@@ -35,6 +35,7 @@ namespace elephant
         size_t _data_len;
     };
 
+#ifdef TE_USE_DEFAULT_BUFFERS
     class DefaultDoc : public Doc
     {
     private:
@@ -86,6 +87,7 @@ namespace elephant
             }
         }
     };
+#endif
 }
 
 namespace elephant

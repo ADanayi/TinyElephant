@@ -18,17 +18,20 @@ namespace elephant
         explicit TinyElephant() = delete;
         bool is_inited();
         operator bool();
+        TinyOperationResult insert_pure_data_file(const unsigned char *data, size_t size, const char *extension = nullptr);
         TinyOperationResult insert(DocWriter &document);
-#ifdef TE_USE_DEFAULT_WRITER_SINGLETON
+#ifdef TE_USE_DEFAULT_BUFFERS
         TinyOperationResult insert();
 #endif
         Doc fetch(tenum id, unsigned char *const buf, const size_t buf_size);
+#ifdef TE_USE_DEFAULT_BUFFERS
         DefaultDoc fetch(tenum id);
+#endif
         bool remove_last_docs();
         // TinyOperationResult replace(tenum id, DocWriter &replace_with);
 
         // protected:
-        void _path_of_to_buf(const tenum id);
+        void _path_of_to_buf(const tenum id, const char *extension = nullptr);
 
         // private:
         bool _inited;
@@ -65,16 +68,20 @@ namespace elephant
         if (root.is_empty())
         {
             cursor_next = 0;
-#ifndef TE_USE_DEFAULT_WRITER_SINGLETON
-            unsigned char buf[TE_DEFAULT_WRITER_BUF_SIZE];
-            DocWriter writer(buf, TE_DEFAULT_WRITER_BUF_SIZE);
-#endif
+#ifndef TE_USE_DEFAULT_BUFFERS
+            unsigned char buf[64];
+            DocWriter writer(buf, 64);
+            writer.clean();
+            writer.append_field("Tiny", "Elephant");
+            writer.append_field("Version", TE_VERSION);
+#else
             writer.clean();
             writer.append_field("Tiny", "Elephant");
             writer.append_field("Version", TE_VERSION);
             writer.append_field("By", "Abolfazl Danayi");
             writer.append_field("Repo", "https://github.com/adanayi/TinyElephant");
             writer.append_field("Good", "Luck");
+#endif
             if (!insert(writer))
             {
                 return;
@@ -88,7 +95,7 @@ namespace elephant
         _is_inited = true;
     }
 
-#ifdef TE_USE_DEFAULT_WRITER_SINGLETON
+#ifdef TE_USE_DEFAULT_BUFFERS
     TinyOperationResult TinyElephant::insert()
     {
         return insert(writer);
@@ -125,6 +132,40 @@ namespace elephant
         return is_inited();
     }
 
+    TinyOperationResult TinyElephant::insert_pure_data_file(const unsigned char *data, size_t size, const char *extentsion)
+    {
+        TinyOperationResult tor;
+        tor.status = false;
+
+        //@optimization
+        unsigned long long int t = dd->millis();
+        _path_of_to_buf(cursor_next, extentsion);
+
+        tor.time_loading_ms = dd->millis() - t;
+        t = dd->millis();
+        if (!root.commit_configs_for_inc(cursor_next))
+        {
+            tor.failure_reason = TinyOperationFailureReasonT::commit_error;
+            return tor;
+        }
+        tor.time_commit_ms = dd->millis() - t;
+        t = dd->millis();
+        if (!dd->write(path_buf, data, size, 0))
+        {
+            tor.failure_reason = TinyOperationFailureReasonT::write_error;
+            return tor;
+        }
+        tor.time_doc_io_ms = dd->millis() - t;
+
+        tor.status = true;
+        tor.failure_reason = TinyOperationFailureReasonT::success;
+        tor.id = cursor_next;
+
+        cursor_next++;
+
+        return tor;
+    }
+
     TinyOperationResult TinyElephant::insert(DocWriter &document)
     {
         TinyOperationResult tor;
@@ -133,6 +174,7 @@ namespace elephant
         sprintf(path_buf, "%llu", cursor_next);
         if (!document.append_field("_id", path_buf))
         {
+            tor.failure_reason = TinyOperationFailureReasonT::writer_error;
             return tor;
         }
 
@@ -143,17 +185,20 @@ namespace elephant
         t = dd->millis();
         if (!root.commit_configs_for_inc(cursor_next))
         {
+            tor.failure_reason = TinyOperationFailureReasonT::commit_error;
             return tor;
         }
         tor.time_commit_ms = dd->millis() - t;
         t = dd->millis();
         if (!document.save_to_file(dd, path_buf))
         {
+            tor.failure_reason = TinyOperationFailureReasonT::write_error;
             return tor;
         }
         tor.time_doc_io_ms = dd->millis() - t;
 
         tor.status = true;
+        tor.failure_reason = TinyOperationFailureReasonT::success;
         tor.id = cursor_next;
 
         cursor_next++;
@@ -161,6 +206,7 @@ namespace elephant
         return tor;
     }
 
+#ifdef TE_USE_DEFAULT_BUFFERS
     DefaultDoc TinyElephant::fetch(tenum id)
     {
         if (id < cursor_first || id >= cursor_next)
@@ -168,6 +214,7 @@ namespace elephant
         _path_of_to_buf(id);
         return DefaultDoc(path_buf, dd);
     }
+#endif
 
     Doc TinyElephant::fetch(tenum id, unsigned char *const buf, const size_t buf_size)
     {
@@ -177,7 +224,7 @@ namespace elephant
         return Doc(path_buf, dd, buf, buf_size);
     }
 
-    void TinyElephant::_path_of_to_buf(const tenum id)
+    void TinyElephant::_path_of_to_buf(const tenum id, const char *extension)
     {
         strcpy(path_buf, root_path);
         char idstr[TE_PATH_BUF_LEN];
@@ -213,8 +260,14 @@ namespace elephant
             }
             if (l == N_layers - 1)
             {
-                const char *ext = ".ted";
-                for (size_t j = 0; j < 4; j++)
+                const char *ext;
+                if (extension == nullptr)
+                    ext = "ted";
+                else
+                    ext = extension;
+                path_buf[target_ctr] = '.';
+                target_ctr++;
+                for (size_t j = 0; j < strlen(ext) + 1; j++)
                 {
                     path_buf[target_ctr] = ext[j];
                     target_ctr++;

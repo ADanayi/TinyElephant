@@ -9,6 +9,14 @@ namespace elephant
 {
     typedef unsigned long long int tenum;
 
+    enum class TinyOperationFailureReasonT
+    {
+        success = 0,
+        commit_error = 1,
+        write_error = 2,
+        writer_error = 3
+    };
+
     struct TinyOperationResult
     {
         bool status;
@@ -20,6 +28,7 @@ namespace elephant
         unsigned long long int time_loading_ms;
         unsigned long long int time_commit_ms;
         unsigned long long int time_doc_io_ms;
+        TinyOperationFailureReasonT failure_reason;
     };
 
 };
