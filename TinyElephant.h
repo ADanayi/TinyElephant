@@ -27,8 +27,10 @@ namespace elephant
 #ifdef TE_USE_DEFAULT_BUFFERS
         DefaultDoc fetch(tenum id);
 #endif
-        bool remove_last_docs();
+        bool remove_last_docs(); // Can be used to free up space
         // TinyOperationResult replace(tenum id, DocWriter &replace_with);
+
+        bool is_empty() const;
 
         // protected:
         void _path_of_to_buf(const tenum id, const char *extension = nullptr);
@@ -93,6 +95,11 @@ namespace elephant
         }
 
         _is_inited = true;
+    }
+
+    bool TinyElephant::is_empty() const
+    {
+        return (root.is_empty());
     }
 
 #ifdef TE_USE_DEFAULT_BUFFERS
