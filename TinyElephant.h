@@ -16,8 +16,8 @@ namespace elephant
             DiskDriverBase *diskdriver, const char *root_path, const size_t N_layers);
         explicit TinyElephant(TinyElephant &) = delete;
         explicit TinyElephant() = delete;
-        bool is_inited();
-        operator bool();
+        bool is_inited() const;
+        operator bool() const;
         TinyOperationResult insert_pure_data_file(const unsigned char *data, size_t size, const char *extension = nullptr);
         TinyOperationResult insert(DocWriter &document);
 #ifdef TE_USE_DEFAULT_BUFFERS
@@ -122,12 +122,12 @@ namespace elephant
         return ok && root._increase_first();
     }
 
-    bool TinyElephant::is_inited()
+    bool TinyElephant::is_inited() const
     {
         return _is_inited;
     }
 
-    TinyElephant::operator bool()
+    TinyElephant::operator bool() const
     {
         return is_inited();
     }

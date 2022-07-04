@@ -268,10 +268,7 @@ namespace elephant
             return;
 
         // Ensuring the folder exists!
-        ticT t = os.ctic();
-        // Serial.printf("ensure_folder_exists@ %s\n", path);
         _dd->ensure_folder_exists(path);
-        // Serial.printf("\t%lu\n", os.ctic() - t);
 
         strcpy(_path, path);
 

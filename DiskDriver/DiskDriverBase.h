@@ -107,12 +107,12 @@ namespace elephant
             /*
             if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
             */
-            ticT t = os.ctic();
+            unsigned long long int t = this->millis();
             // Serial.printf("remove file @ %s\n", path);
             if (!ready_path_str_buf(path, path_len))
                 return false;
             bool r = _remove(path_str_buf);
-            // Serial.printf("\t%lu\n", os.ctic() - t);
+            // Serial.printf("\t%lu\n", this->millis() - t);
             return r;
         }
         bool read(const char *path, unsigned char *buf, size_t &len, const size_t max_buf_len, size_t path_len = 0)
@@ -120,14 +120,14 @@ namespace elephant
             /*
             if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
             */
-            ticT t = os.ctic();
+            unsigned long long int t = this->millis();
             // Serial.printf("read file @ %s\n", path);
             if (!ready_path_str_buf(path, path_len))
                 return false;
             if (!_exists(path))
                 return false;
             bool r = _read(path, buf, len, max_buf_len);
-            // Serial.printf("\t%lu\n", os.ctic() - t);
+            // Serial.printf("\t%lu\n", this->millis() - t);
             return r;
         }
         virtual bool write(const char *path, const unsigned char *buf, const size_t buf_len, size_t path_len = 0)
@@ -136,14 +136,14 @@ namespace elephant
             if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
             */
 
-            ticT t = os.ctic();
+            unsigned long long int t = this->millis();
             // Serial.printf("write file @ %s\n", path);
 
             if (!ready_path_str_buf(path, path_len))
                 return false;
             bool r = _write(path, buf, buf_len);
 
-            // Serial.printf("\t%lu\n", os.ctic() - t);
+            // Serial.printf("\t%lu\n", this->millis() - t);
 
             return r;
         }
@@ -152,7 +152,7 @@ namespace elephant
             /*
             if path_len is present (for example when working with string objects, you can give it to save more time. otherwise leave it to be 0)
             */
-            ticT t = os.ctic();
+            unsigned long long int t = this->millis();
             // Serial.printf("rename file @ %s -> %s\n", old_path, new_path);
             if ((old_path_len == 0) && old_path[0] != '\0')
                 old_path_len = strlen(old_path);
@@ -178,7 +178,7 @@ namespace elephant
                 return false;
             }
             bool r = _rename(old_path_buf, new_path_buf);
-            // Serial.printf("\t%lu\n", os.ctic() - t);
+            // Serial.printf("\t%lu\n", this->millis() - t);
             return r;
         }
         bool ensure_folder_exists(const char *path, size_t path_len = 0)
